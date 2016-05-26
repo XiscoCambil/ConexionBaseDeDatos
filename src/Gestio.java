@@ -1,5 +1,11 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Scanner;
 
 
 public class Gestio {
@@ -16,7 +22,8 @@ public class Gestio {
                 "2.- MÀXIM CODI CLIENT \n" +
                 "3.- NOU CLIENT PERSONA \n" +
                 "4.- ELIMINAR CLIENT PERSONA \n" +
-                "5.- MODIFICACION CLIENT PERSONA \n" +
+                "5.- MODIFICACION CLIENT PERSONA \n"+
+                "6.- PROVEIDOR \n"+
                 "Q.- SORTIR \n" +
                 "");
     }
@@ -43,9 +50,7 @@ public class Gestio {
                     System.out.print("\033[H\033[2J");
                     break;
                 case "3":
-                    System.out.print("\033[H\033[2J");
                     nouClientPersona();
-                    System.out.print("\033[H\033[2J");
                     break;
                 case "4":
                     System.out.print("\033[H\033[2J");
@@ -56,6 +61,15 @@ public class Gestio {
                     System.out.print("\033[H\033[2J");
                     ModificarCliente();
                     System.out.print("\033[H\033[2J");
+                    break;
+                case "6":
+                    int opcion = 0;
+                    while (opcion != 6) {
+                        Proveidor p = new Proveidor(user, password, dbClassName, CONNECTION);
+                        p.Menu();
+                        opcion = userInput.nextInt();
+                        p.Option(opcion);
+                    }
                     break;
             }
         }
@@ -79,80 +93,112 @@ public class Gestio {
         Connection c = ConexionBBDD();
 
         //suposam que el client és una PERSONA_CLI
-        String sql = "select C.id_client,PC.nom,PC.llinatge1,PC.llinatges2 FROM CLIENT C inner join PERSONA_CLI PC on PC.id_client=C.id_client WHERE C.id_client=?";
+        String sql = "select C.id_client,PC.nom,PC.llinatge1,PC.llinatges2 FROM CLIENT C inner join PERSONA_CLI PC on PC.id_client=C.id_client";
 
         PreparedStatement preparedStatement = c.prepareStatement(sql);
-        preparedStatement.setInt(1, id_client);
         // execute select SQL stetement
         ResultSet rs = preparedStatement.executeQuery();
 
-        if (rs.next()) {
-            int codi_client = rs.getInt("id_client");
-            String nom = rs.getString("nom");
-            String llinatge1 = rs.getString("llinatge1");
-            String llinatge2 = rs.getString("llinatges2");
-            String telefon = rs.getString("telefon");
-            System.out.println("persona nom: " + nom +"\n"+
-                                "llinatge1: "+ llinatge1+"\n"+
-                                "llinatge2: "+ llinatge2+"\n"+
-                                "telefon;   "+ telefon);
 
-        } else {
-            //comprovam si el client és una empresa
-            sql = "SELECT C.id_client,nom,cif,telefon";
-            sql += " FROM gestio_d.EMPRESA_CLI EC INNER JOIN CLIENT C ";
-            sql += " on C.id_client=EC.id_client where C.id_client=?";
-            preparedStatement = c.prepareStatement(sql);
-            preparedStatement.setInt(1, id_client);
-            // execute select SQL stetement
-            ResultSet rs2 = preparedStatement.executeQuery();
-            if (rs2.next()) {
-                String nom = rs2.getString("nom");
-                System.out.println("empresa nom: " + nom);
-            } else {
-                System.out.println("client no trobat");
+            while (rs.next()) {
+                String nom = rs.getString("nom");
+                String llinatge1 = rs.getString("llinatge1");
+                String llinatge2 = rs.getString("llinatges2");
+                System.out.println("persona nom: " + nom + "\n" +
+                        "llinatge1: " + llinatge1 + "\n" +
+                        "llinatge2: " + llinatge2 + "\n");
             }
-        }
-        c.close();
 
+//        } else {
+            //comprovam si el client és una empresa
+//            sql = "SELECT C.id_client,nom,cif,telefon";
+//            sql += " FROM gestio_d.EMPRESA_CLI EC INNER JOIN CLIENT C ";
+//            sql += " on C.id_client=EC.id_client where C.id_client=?";
+//            preparedStatement = c.prepareStatement(sql);
+//            preparedStatement.setInt(1, id_client);
+            // execute select SQL stetement
+//            ResultSet rs2 = preparedStatement.executeQuery();
+//            if (rs2.next()) {
+//                String nom = rs2.getString("nom");
+//                System.out.println("empresa nom: " + nom);
+//            } else {
+//                System.out.println("client no trobat");
+//            }
+
+        c.close();
     }
 
     private static void nouClientPersona() throws ClassNotFoundException, SQLException {
-        // creates a drivermanager class factory
-        Connection c = ConexionBBDD();
-        int codi = maxCodiClient() + 1;
-        String sql = "insert into CLIENT (id_client) values (?)";
-        PreparedStatement ps = c.prepareStatement(sql);
-        ps.setInt(1, codi);
-        ps.execute();
+        File f = new File("../file/usuarios.txt");
+        try {
+            InputStream b = new FileInputStream(f);
+            int caracter = 0;
+            char caracterBueno;
+            String palabra ="";
+            List<String> valoresIntroducidos = new ArrayList<>();
+            while ((caracter = b.read()) != -1){
+                caracterBueno = (char)caracter;
+               if(caracterBueno == ','){
+                valoresIntroducidos.add(palabra);
+                   palabra ="";
+               }else if(caracterBueno == '\n'){
+                    continue;
+                }else{
+                   palabra+= caracterBueno;
+               }
+            }
+            System.out.println(valoresIntroducidos.toString());
+            Connection c = ConexionBBDD();
+            for (int i = 0; i < valoresIntroducidos.size(); i++) {
+                int maxCodiClient = maxCodiClient()+1;
+                String nom = valoresIntroducidos.get(i);
+                i++;
+                String llinatge1 = valoresIntroducidos.get(i);
+                i++;
+                String llinatges2 = valoresIntroducidos.get(i);
+                i++;
+                String nif = valoresIntroducidos.get(i);
+                i++;
+                String telefon = valoresIntroducidos.get(i);
+                String sql = "insert into CLIENT (id_client) values (?)";
+                PreparedStatement ps = c.prepareStatement(sql);
+                ps.setInt(1, maxCodiClient);
+                ps.execute();
+                sql ="insert into PERSONA_CLI (id_client,nom,llinatge1,llinatges2,nif,telefon) values (?,?,?,?,?,?)";
+                PreparedStatement ps2 = c.prepareStatement(sql);
+                ps2.setInt(1,maxCodiClient);
+                ps2.setString(2, nom);
+                ps2.setString(3, llinatge1);
+                ps2.setString(4, llinatges2);
+                ps2.setString(5, nif);
+                ps2.setString(6,telefon);
+                ps2.execute();
+            }
 
-        Scanner userInput = new Scanner(System.in);
-        System.out.println("Introduir nom del client");
-        String nom = userInput.next();
-        System.out.println("Introduir llinatge1 del client");
-        String llinatge1 = userInput.next();
-        System.out.println("Introduir llinatges2 del client");
-        String llinatge2 = userInput.next();
-        System.out.println("Introduir nif del client");
-        String nif = userInput.next();
-        System.out.println("Introduir telèfon del client");
-        String telefon = userInput.next();
+            // creates a drivermanager class factory
 
-        sql = "INSERT INTO PERSONA_CLI SET id_client=?, " +
-                "nom=?,llinatge1=?,llinatges2=?,nif=?,telefon=?";
+//            int codi = maxCodiClient() + 1;
 
-        ps = c.prepareStatement(sql);
-        ps.setInt(1, codi);
-        ps.setString(2, nom);
-        ps.setString(3, llinatge1);
-        ps.setString(4, llinatge2);
-        ps.setString(5, nif);
-        ps.setString(6, telefon);
-        ps.execute();
+//            ps.setInt(1,codi);
+//            ps.execute();
+
+//            Scanner userInput = new Scanner(System.in);
+//            System.out.println("Introduir nom del client");
+//            String nom = userInput.next();
+//            System.out.println("Introduir llinatge1 del client");
+//            String llinatge1 = userInput.next();
+//            System.out.println("Introduir llinatges2 del client");
+//            String llinatge2 = userInput.next();
+//            System.out.println("Introduir nif del client");
+//            String nif = userInput.next();
+//            System.out.println("Introduir telèfon del client");
+//            String telefon = userInput.next();
 
 
-        c.close();
-
+            c.close();
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     private static void EliminarCliente() throws ClassNotFoundException, SQLException {
@@ -181,8 +227,6 @@ public class Gestio {
         String palabra = "";
         Connection c = ConexionBBDD();
         Scanner userInput = new Scanner(System.in);
-        System.out.println("Introduir codi client");
-        int codi = userInput.nextInt();
         System.out.println("Introduzca los campos que desea modificar: ");
         String texto = userInput.next();
         List<String> campos = new ArrayList<>();
@@ -198,31 +242,69 @@ public class Gestio {
         palabra = "";
         System.out.println("Que valores desea introducir: ");
         String textocambios = userInput.next();
-        List<String> valores = new ArrayList<>();
+        List<String> valoresIntroducidos = new ArrayList<>();
         for (int i = 0; i < textocambios.length(); i++) {
             if(textocambios.charAt(i) != ','){
                 palabra+= textocambios.charAt(i);
             }else{
-                valores.add(palabra);
+                valoresIntroducidos.add(palabra);
                 palabra = "";
             }
         }
-        System.out.println(valores.toString());
+        System.out.println(valoresIntroducidos.toString());
+        palabra = "";
+        System.out.println("Campos condicioanles?");
+        String camposCon = userInput.next();
+        List<String> camposCondicioanles = new ArrayList<>();
+        for (int i = 0; i < camposCon.length(); i++) {
+            if(camposCon.charAt(i) != ','){
+                palabra+= camposCon.charAt(i);
+            }else{
+                camposCondicioanles.add(palabra);
+                palabra = "";
+            }
+        }
+        System.out.println(camposCondicioanles.toString());
+        palabra = "";
+        System.out.println("Valores condicioanles?");
+        String valoresCon = userInput.next();
+        List<String> valoresCondicioanles = new ArrayList<>();
+        for (int i = 0; i < valoresCon.length(); i++) {
+            if(valoresCon.charAt(i) != ','){
+                palabra+= valoresCon.charAt(i);
+            }else{
+                valoresCondicioanles.add(palabra);
+                palabra = "";
+            }
+        }
+        System.out.println(valoresCondicioanles.toString());
         String sql = "UPDATE PERSONA_CLI SET ";
         for (int i = 0,x = 1; i < campos.size() ; i++,x++) {
             if(campos.size() == 1){
-                sql += campos.get(i)+"="+valores.get(i);
+                sql += campos.get(i)+"="+valoresIntroducidos.get(i);
             }else{
                 if(i == campos.size()-1){
-                    sql += campos.get(i)+"="+valores.get(i);
+                    sql += campos.get(i)+"="+valoresIntroducidos.get(i);
                 }else {
-                    sql += campos.get(i)+"="+ valores.get(i)+", ";
+                    sql += campos.get(i)+"="+ valoresIntroducidos.get(i)+", ";
                 }
             }
         }
-        sql += " WHERE id_client ="+codi;
+        sql += " WHERE ";
+        for (int i = 0,x = 1; i < camposCondicioanles.size() ; i++,x++) {
+            if(camposCondicioanles.size() == 1){
+                sql += camposCondicioanles.get(i)+"="+valoresCondicioanles.get(i);
+            }else{
+                if(i == camposCondicioanles.size()-1){
+                    sql += camposCondicioanles.get(i)+"="+valoresCondicioanles.get(i);
+                }else {
+                    sql += camposCondicioanles.get(i)+"="+valoresCondicioanles.get(i)+"&& ";
+                }
+            }
+        }
         PreparedStatement ps = c.prepareStatement(sql);
         System.out.print("\033[H\033[2J");
+        System.out.println(sql);
         ps.execute();
 
         c.close();
