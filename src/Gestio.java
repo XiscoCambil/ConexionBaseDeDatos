@@ -316,7 +316,7 @@ public class Gestio {
         Connection c = ConexionBBDD();
 
         String sql = "select max(id_client) as max from CLIENT";
-        PreparedStatement preparedStatement = c.prepareStatement(sql);
+       PreparedStatement preparedStatement = c.prepareStatement(sql);
         // execute select SQL stetement
         ResultSet rs = preparedStatement.executeQuery();
         rs.next();
