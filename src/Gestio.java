@@ -63,13 +63,9 @@ public class Gestio {
                     System.out.print("\033[H\033[2J");
                     break;
                 case "6":
-                    int opcion = 0;
-                    while (opcion != 6) {
                         Proveidor p = new Proveidor(user, password, dbClassName, CONNECTION);
-                        p.Menu();
-                        opcion = userInput.nextInt();
-                        p.Option(opcion);
-                    }
+                        MenuPoveidor m = new MenuPoveidor(p);
+                        m.MenuPrincipal();
                     break;
             }
         }
